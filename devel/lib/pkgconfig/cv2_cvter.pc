@@ -1,0 +1,8 @@
+prefix=/home/superkuo/Documents/workspace/cv_practice_ws/devel
+
+Name: cv2_cvter
+Description: Description of cv2_cvter
+Version: 0.0.0
+Cflags: 
+Libs: -L/home/superkuo/Documents/workspace/cv_practice_ws/devel/lib 
+Requires: 
