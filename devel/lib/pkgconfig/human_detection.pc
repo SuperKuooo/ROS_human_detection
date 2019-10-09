@@ -1,8 +1,0 @@
-prefix=/home/superkuo/Documents/workspace/cv_practice_ws/devel
-
-Name: human_detection
-Description: Description of human_detection
-Version: 0.0.0
-Cflags: 
-Libs: -L/home/superkuo/Documents/workspace/cv_practice_ws/devel/lib 
-Requires: 

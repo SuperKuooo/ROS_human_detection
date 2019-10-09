@@ -1,12 +1,12 @@
 #!/usr/bin/env python
-import sys
-# sys.path.append('/opt/ros/kinetic/lib/python2.7/dist-packages')
-# sys.path.append('/home/superkuo/Documents/workspace/cv_practice_ws/src/human_detection/src/')
 
+# For Performance timing, import time.
+from analysis_tools.data_grapher import *
+from analysis_tools.define import *
+import time
+import sys
 import os
 import tensorflow as tf
-print(tf.__version__)
-import cv2
 
 import numpy as np
 import rospy
@@ -18,44 +18,34 @@ from cv_bridge import CvBridge, CvBridgeError
 from object_detection.utils import label_map_util
 from object_detection.utils import visualization_utils as vis_util
 
-CWD_PATH = '/home/superkuo/Documents/workspace/cv_practice_ws/src/human_detection/src'
-
-# List of label maps
+# Defining Paths
+print('Current Tensorflow Version: ' + str(tf.__version__))
+CWD_PATH = '/home/jerry/Documents/workspaces/ROS_human_detection/src/human_detection/src'
 LABEL_MAPS = ['human_label_map.pbtxt', 'mscoco_label_map.pbtxt']
-
-# Name of the directory containing the object detection module we're using
 MODEL_NAME = 'ssd_mobilenet_v1_coco_2017_11_17'
-
-# Path to frozen detection graph .pb file, which contains the model that is used
-# for object detection.
-PATH_TO_CKPT = os.path.join(CWD_PATH,MODEL_NAME,'frozen_inference_graph.pb')
-
-# Path to label map file
+PATH_TO_CKPT = os.path.join(CWD_PATH, MODEL_NAME, 'frozen_inference_graph.pb')
 PATH_TO_LABELS = os.path.join(CWD_PATH + '/data', LABEL_MAPS[0])
 
-# Number of classes the object detector can identify
-NUM_CLASSES = 1
 
-## Load the label map.
-# Label maps map indices to category names, so that when our convolution
-# network predicts `5`, we know that this corresponds to `king`.
-# Here we use internal utility functions, but anything that returns a
-# dictionary mapping inremovetegers to appropriate string labels would be fine
+
+
+# Load the label map.
 label_map = label_map_util.load_labelmap(PATH_TO_LABELS)
-categories = label_map_util.convert_label_map_to_categories(label_map, max_num_classes=NUM_CLASSES, use_display_name=True)
+categories = label_map_util.convert_label_map_to_categories(
+    label_map, max_num_classes=NUM_CLASSES, use_display_name=True)
 category_index = label_map_util.create_category_index(categories)
 
 
 # Load the Tensorflow model into memory.
 detection_graph = tf.Graph()
 with detection_graph.as_default():
-    od_graph_def = tf.GraphDef()
-    with tf.gfile.GFile(PATH_TO_CKPT, 'rb') as fid:
+    od_graph_def = tf.compat.v1.GraphDef()
+    with tf.io.gfile.GFile(PATH_TO_CKPT, 'rb') as fid:
         serialized_graph = fid.read()
         od_graph_def.ParseFromString(serialized_graph)
         tf.import_graph_def(od_graph_def, name='')
 
-    sess = tf.Session(graph=detection_graph)
+    sess = tf.compat.v1.Session(graph=detection_graph)
 
 
 # Define input and output tensors (i.e. data) for the object detection classifier
@@ -75,14 +65,18 @@ detection_classes = detection_graph.get_tensor_by_name('detection_classes:0')
 # Number of objects detected
 num_detections = detection_graph.get_tensor_by_name('num_detections:0')
 
+
+# time_origin = time.time()
 class human_detector:
     def __init__(self):
-        self.image_pub = rospy.Publisher("human_detected_image", Image, queue_size=10)
-
         self.bridge = CvBridge()
-        self.image_sub = rospy.Subscriber("/camera/color/image_raw", Image,self.callback)
+        self.image_pub = rospy.Publisher(
+            "human_detected_image", Image, queue_size=10)
+        self.image_sub = rospy.Subscriber(
+            "/camera/color/image_raw", Image, self.callback)
 
     def callback(self, data):
+        t0 = time.time()
         try:
             cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
         except CvBridgeError as e:
@@ -95,6 +89,16 @@ class human_detector:
             [detection_boxes, detection_scores, detection_classes, num_detections],
             feed_dict={image_tensor: frame_expanded})
 
+        # Reducing the elements
+        classes = classes[:, 0:5]
+        scores = scores[:, 0:5]
+        boxes = boxes[:, 0:5]
+
+        # Delete anything that is not a person
+        for i in range(0, 5):
+            if classes[0][i] != person_id:
+                scores[0][i] = 0
+
         # Draw the results of the detection (aka 'visulaize the results')
         vis_util.visualize_boxes_and_labels_on_image_array(
             cv_image,
@@ -106,28 +110,40 @@ class human_detector:
             line_thickness=8,
             min_score_thresh=0.60)
 
+        # Calculate frame time
+        t1 = time.time()
+        run_time = t1-t0
+        if run_time < 1:
+            run_time_list.append(run_time)
+            if len(run_time_list) > 10:
+                del run_time_list[0]
+        
+        if len(run_time_list) > 0:
+            avg_run_time = round(sum(run_time_list)/len(run_time_list)*1000, 1)
+            cv2.putText(cv_image, 'Run Time: {}ms'.format(avg_run_time), 
+            text_position,
+            font,
+            font_scale,
+            font_color,
+            line_type)
 
-        if scores[0][0] > 0.60:
-            cv2.circle(cv_image, (int((boxes[0][0][0]+boxes[0][0][2])*640//2),
-                                  int((boxes[0][0][1]+boxes[0][0][3])*480//2)), 20, 255, 3)
 
         try:
             self.image_pub.publish(self.bridge.cv2_to_imgmsg(cv_image, "bgr8"))
         except CvBridgeError as e:
             print(e)
 
+        # Append Accuracy
+        if scores[0][0] > 0.01:
+            prediction_level_list.append(scores[0][0])
+
 
 def main(args):
-  hd = human_detector()
-  rospy.init_node('human_detector', anonymous=True)
-  try:
+    print(args)
+    hd = human_detector()
+    rospy.init_node('human_detector', anonymous=True)
     rospy.spin()
-  except KeyboardInterrupt:
-    print("Shutting down")
-  cv2.destroyAllWindows()
+    graph_average_percentage(prediction_level_list)
 
 if __name__ == '__main__':
     main(sys.argv)
-
-
-
