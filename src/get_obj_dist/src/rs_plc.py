@@ -1,7 +1,8 @@
 from datetime import datetime
 import pyrealsense2 as rs
 import numpy as np
-from open3d import *
+import open3d as o3d
+import time
 
 
 # Create a pipeline
@@ -19,9 +20,9 @@ profile = pipeline.start(config)
 
 # Streaming loop
 try:
-    vis = Visualizer()
+    vis = o3d.visualization.Visualizer()
     vis.create_window("Tests")
-    pcd = PointCloud()
+    pcd = o3d.geometry.PointCloud()
     while True:
         dt0 = datetime.now()
         vis.add_geometry(pcd)
@@ -35,13 +36,18 @@ try:
         pc = rs.pointcloud()
         pc.map_to(color)
         points = pc.calculate(depth)
-        vtx = np.asanyarray(points.get_vertices_2d())
-        pcd.points = Vector3dVector(vtx)
+        vtx = np.asanyarray(points.get_vertices())
+        print(vtx)
+        print(o3d.utility.Vector3dVector(vtx))
+        # pcd.points = o3d.utility.Vector3dVector(vtx)
         vis.update_geometry()
         vis.poll_events()
         vis.update_renderer()
         process_time = datetime.now() - dt0
         print("FPS = {0}".format(1/process_time.total_seconds()))
+        time.sleep(1)
+except KeyboardInterrupt:
+    print('Exiting')
 
 finally:
     pipeline.stop()

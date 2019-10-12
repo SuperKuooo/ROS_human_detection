@@ -1,0 +1,8 @@
+prefix=/home/jerry/Documents/workspaces/ROS_human_detection/devel
+
+Name: object_distance
+Description: Description of object_distance
+Version: 0.0.0
+Cflags: 
+Libs: -L/home/jerry/Documents/workspaces/ROS_human_detection/devel/lib 
+Requires: 

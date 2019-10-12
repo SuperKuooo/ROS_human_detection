@@ -1,3 +1,5 @@
 /build
 /develop
+src/.idea
+.bag
 .vscode

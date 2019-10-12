@@ -1,0 +1,8 @@
+prefix=/home/jerry/Documents/workspaces/ROS_human_detection/devel
+
+Name: human_detection
+Description: Description of human_detection
+Version: 0.0.0
+Cflags: -I/home/jerry/Documents/workspaces/ROS_human_detection/devel/include
+Libs: -L/home/jerry/Documents/workspaces/ROS_human_detection/devel/lib 
+Requires: roslib rospy std_msgs message_runtime

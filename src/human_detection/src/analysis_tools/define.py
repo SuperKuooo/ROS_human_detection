@@ -13,3 +13,5 @@ font_color = (255,255,255)
 line_type = 2
 run_time_list = []
 prediction_level_list = []
+screen_width = 600
+screen_height = 480

@@ -2,6 +2,9 @@
 <module type="PYTHON_MODULE" version="4">
   <component name="NewModuleRootManager">
     <content url="file://$MODULE_DIR$" />
+    <content url="file:///opt/ros/kinetic/lib/python2.7/dist-packages">
+      <sourceFolder url="file:///opt/ros/kinetic/lib/python2.7/dist-packages" isTestSource="false" />
+    </content>
     <orderEntry type="jdk" jdkName="Python 2.7 (py2ROS)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
