@@ -1,8 +1,0 @@
-prefix=/home/jerry/Documents/workspaces/ROS_human_detection/devel
-
-Name: get_obj_dist
-Description: Description of get_obj_dist
-Version: 0.0.0
-Cflags: 
-Libs: -L/home/jerry/Documents/workspaces/ROS_human_detection/devel/lib 
-Requires: 
