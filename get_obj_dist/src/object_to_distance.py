@@ -19,7 +19,6 @@ font_scale = 0.75
 font_color = (255, 255, 255)
 line_type = 2
 
-counter = 0
 
 class obj_dist:
     def __init__(self):
@@ -41,25 +40,23 @@ class obj_dist:
         ts.registerCallback(self.callback)
 
     def callback(self, bbx, image, depth):
-        print('Called!')
-        global counter
         if bbx.length:
             cv_depth = self.bridge.imgmsg_to_cv2(depth, 'passthrough')
             cv_image = self.bridge.imgmsg_to_cv2(image, 'bgr8')
-            box = bbx.people_list[0]
-            roi_depth = cv_depth[box.xmin:box.xmax, box.ymin:box.ymax]
-            x = box.xmax - box.xmin
-            y = box.ymax - box.ymin
+            for box in bbx.people_list:
+                roi_depth = cv_depth[box.xmin:box.xmax, box.ymin:box.ymax]
 
-            avg_distance = roi_depth[roi_depth <= 2500].sum() / (x*y) / 1000
-            cv2.putText(cv_image, '{} meters'.format(avg_distance),
-                        (box.xmin, box.ymax-100),
-                        font,
-                        font_scale,
-                        font_color,
-                        line_type)
-            self.dist_pub.publish(self.bridge.cv2_to_imgmsg(cv_image))
-            counter += 1
+                filtered_depth = roi_depth[roi_depth <= 2900]
+                _size = len(filtered_depth)
+
+                avg_distance = filtered_depth.sum() / _size / 1000
+                cv2.putText(cv_image, '{} meters'.format(avg_distance),
+                            (box.xmin, box.ymax-100),
+                            font,
+                            font_scale,
+                            font_color,
+                            line_type)
+                self.dist_pub.publish(self.bridge.cv2_to_imgmsg(cv_image))
 
 
 def main(args):
