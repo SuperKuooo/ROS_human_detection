@@ -14,7 +14,7 @@ cd catkin_workspace/src
 
 Pull the repository and catkin_make
 ```shell
-git pull https://github.com/SuperKuooo/ROS_human_detection.git
+git clone https://github.com/SuperKuooo/ROS_human_detection.git
 cd ..
 catkin_make
 source ./devel/setup.bash
