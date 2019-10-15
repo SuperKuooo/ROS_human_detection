@@ -4,15 +4,15 @@
 import time
 import sys
 import os
-import tensorflow as tf
-sys.path.append('/home/jerry/Documents/workspaces/ROS_human_detection/src/human_detection')
-# import numpy as np
 import rospy
+import tensorflow as tf
+
+sys.path.append('/home/jerry/Documents/workspaces/ROS_human_detection/src/human_detection')
 
 # For performance analysis timing, import time.
 from analysis_tools.data_grapher import *
 from analysis_tools.define import *
-from human_detection.msg import bounding_box
+from human_detection.msg import bounding_box, box_list
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 
@@ -21,7 +21,6 @@ from object_detection.utils import label_map_util
 from object_detection.utils import visualization_utils as vis_util
 
 # Defining Paths
-print('Current Tensorflow Version: ' + str(tf.__version__))
 CWD_PATH = '/home/jerry/Documents/workspaces/ROS_human_detection/src/human_detection/src'
 LABEL_MAPS = ['human_label_map.pbtxt', 'mscoco_label_map.pbtxt']
 MODEL_NAME = 'ssd_mobilenet_v1_coco_2017_11_17'
@@ -68,7 +67,7 @@ class human_detector:
         self.bridge = CvBridge()
         self.image_pub = rospy.Publisher(
             "/human_detected_image/image", Image, queue_size=10)
-        self.bbx_pub = rospy.Publisher('/human_detected_image/bounding_box', bounding_box, queue_size=10)
+        self.bbx_pub = rospy.Publisher('/human_detected_image/bounding_box', box_list, queue_size=10)
         self.image_sub = rospy.Subscriber(
             "/camera/color/image_raw", Image, self.callback)
 
@@ -109,12 +108,12 @@ class human_detector:
             min_score_thresh=0.60)
 
         # Calculate frame time
-        # t1 = time.time()
-        # run_time = t1 - t0
-        # if run_time < 1:
-        #     run_time_list.append(run_time)
-        #     if len(run_time_list) > 10:
-        #         del run_time_list[0]
+        t1 = time.time()
+        run_time = t1 - t0
+        if run_time < 1:
+            run_time_list.append(run_time)
+            if len(run_time_list) > 10:
+                del run_time_list[0]
 
         if len(run_time_list) > 0:
             avg_run_time = round(sum(run_time_list) / len(run_time_list) * 1000, 1)
@@ -124,21 +123,32 @@ class human_detector:
                         font_scale,
                         font_color,
                         line_type)
+
         counter = 0
+        list_length = 0
+        bbx_list = box_list()
+        bbx_list.header.stamp = rospy.Time.now()
+
         for score in scores[0]:
             if score > 0.6:
+                list_length += 1
                 coordinates = bounding_box()
                 coordinates.ymin = int(boxes[0, counter, 0] * screen_height)
                 coordinates.xmin = int(boxes[0, counter, 1] * screen_width)
                 coordinates.ymax = int(boxes[0, counter, 2] * screen_height)
                 coordinates.xmax = int(boxes[0, counter, 3] * screen_width)
-                self.bbx_pub.publish(coordinates)
+                bbx_list.people_list.append(coordinates)
             counter += 1
+
+        print(list_length)
+        bbx_list.length = list_length
+        self.bbx_pub.publish(bbx_list)
 
         try:
             cvt_msg = self.bridge.cv2_to_imgmsg(cv_image, "bgr8")
-            cvt_msg.header = data.header
+            cvt_msg.header.stamp = rospy.Time.now()
             self.image_pub.publish(cvt_msg)
+            # print(cvt_msg.header)
         except CvBridgeError as e:
             print(e)
  
@@ -148,8 +158,7 @@ class human_detector:
         #     prediction_level_list.append(scores[0][0])
 
 
-def main(args):
-    print(args)
+def main():
     _ = human_detector()
     rospy.init_node('human_detector', anonymous=True)
     rospy.spin()
@@ -157,4 +166,34 @@ def main(args):
 
 
 if __name__ == '__main__':
-    main(sys.argv)
+    print('Current Tensorflow Version: ' + str(tf.__version__))
+    # ospy.set_param('use_sim_time', 'True')
+    main()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

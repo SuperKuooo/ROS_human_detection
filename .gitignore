@@ -1,4 +1,4 @@
-/.idea
-.bag
-.txt
+.idea
+*.bag
+*CMakeLists.txt
 .catkin_workspace

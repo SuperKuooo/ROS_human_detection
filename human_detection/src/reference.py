@@ -31,9 +31,9 @@ class image_converter:
     cv2.waitKey(3)
 
     try:
-      ret_val = self.bridge.cv2_to_imgmsg(cv_image, "bgr8")
-      ret_val.header = data.header
-      self.image_pub.publish(ret_val)
+      ret_img = self.bridge.cv2_to_imgmsg(cv_image, "bgr8")
+      ret_img.header = data.header
+      self.image_pub.publish(ret_img)
     except CvBridgeError as e:
       print(e)
 
