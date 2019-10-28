@@ -1,13 +1,12 @@
 #!/usr/bin/env python
-
-
 import time
 import sys
 import os
 import rospy
+from setuptools import setup, find_packages
 import tensorflow as tf
 
-sys.path.append('/home/jerry/Documents/workspaces/ROS_human_detection/src/human_detection')
+sys.path.append('/home/jerry/Documents/workspaces/human_detection/src/ROS_human_detection/human_detection/src')
 
 # For performance analysis timing, import time.
 from analysis_tools.data_grapher import *
@@ -21,7 +20,7 @@ from object_detection.utils import label_map_util
 from object_detection.utils import visualization_utils as vis_util
 
 # Defining Paths
-CWD_PATH = '/home/jerry/Documents/workspaces/ROS_human_detection/src/human_detection/src'
+CWD_PATH = '/home/jerry/Documents/workspaces/human_detection/src/ROS_human_detection/human_detection/src'
 LABEL_MAPS = ['human_label_map.pbtxt', 'mscoco_label_map.pbtxt']
 MODEL_NAME = 'ssd_mobilenet_v1_coco_2017_11_17'
 PATH_TO_CKPT = os.path.join(CWD_PATH, MODEL_NAME, 'frozen_inference_graph.pb')
@@ -61,15 +60,15 @@ detection_classes = detection_graph.get_tensor_by_name('detection_classes:0')
 # Number of objects detected
 num_detections = detection_graph.get_tensor_by_name('num_detections:0')
 
+
 # time_origin = time.time()
 class human_detector:
     def __init__(self):
         self.bridge = CvBridge()
-        self.image_pub = rospy.Publisher(
-            "/human_detected_image/image", Image, queue_size=10)
+        self.image_sub = rospy.Subscriber("/camera/color/image_raw", Image, self.callback)
+
+        self.image_pub = rospy.Publisher("/human_detected_image/image", Image, queue_size=10)
         self.bbx_pub = rospy.Publisher('/human_detected_image/bounding_box', box_list, queue_size=10)
-        self.image_sub = rospy.Subscriber(
-            "/camera/color/image_raw", Image, self.callback)
 
     def callback(self, data):
         t0 = time.time()
@@ -140,7 +139,7 @@ class human_detector:
                 bbx_list.people_list.append(coordinates)
             counter += 1
 
-        print(list_length)
+        # print(list_length)
         bbx_list.length = list_length
         self.bbx_pub.publish(bbx_list)
 
@@ -167,7 +166,7 @@ def main():
 
 if __name__ == '__main__':
     print('Current Tensorflow Version: ' + str(tf.__version__))
-    # ospy.set_param('use_sim_time', 'True')
+    rospy.set_param('use_sim_time', 'True')
     main()
 
 
