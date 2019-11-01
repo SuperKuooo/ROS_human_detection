@@ -3,13 +3,13 @@ import time
 import sys
 import os
 import rospy
-from setuptools import setup, find_packages
+import numpy as np
 import tensorflow as tf
 
 sys.path.append('/home/jerry/Documents/workspaces/human_detection/src/ROS_human_detection/human_detection/src')
 
 # For performance analysis timing, import time.
-from analysis_tools.data_grapher import *
+# from analysis_tools.data_grapher import *
 from analysis_tools.define import *
 from human_detection.msg import bounding_box, box_list
 from sensor_msgs.msg import Image

@@ -1,4 +1,6 @@
 .idea
 *.bag
+*.pyc
 .catkin_workspace
+
 # *CMakeLists.txt
