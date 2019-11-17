@@ -1,0 +1,4 @@
+<launch>
+    <node pkg="human_detection" type="webcam.py" name="webcam"/>
+    <node pkg="get_obj_dist" type="object_to_distance.py" name="object_to_distance"/>
+</launch>

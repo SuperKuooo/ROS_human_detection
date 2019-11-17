@@ -1,5 +1,0 @@
-<launch>
-    <node pkg="human_detection" type="webcam" name="webcam"/>
-    <node pkg="get_obj_dist" type="object_to_distance" name="object_to_distance"/>
-
-</launch>

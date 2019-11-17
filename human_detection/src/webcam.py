@@ -147,7 +147,6 @@ class human_detector:
             cvt_msg = self.bridge.cv2_to_imgmsg(cv_image, "bgr8")
             cvt_msg.header.stamp = rospy.Time.now()
             self.image_pub.publish(cvt_msg)
-            # print(cvt_msg.header)
         except CvBridgeError as e:
             print(e)
  
