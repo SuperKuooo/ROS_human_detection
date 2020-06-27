@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-import numpy as np
 import sys
 import cv2
 import rospy
@@ -17,6 +16,7 @@ font = cv2.FONT_HERSHEY_SIMPLEX
 font_scale = 0.75
 font_color = (255, 255, 255)
 line_type = 2
+marker_size = 5
 size_of_moving_avg = 15
 
 
@@ -25,16 +25,19 @@ class obj_dist:
         # Declare functional variables
         self.bridge = CvBridge()
         self.marker_array = MarkerArray()
-        self.moving_average = [3] * size_of_moving_avg
-        self.set_marker_array(5, 'camera_color_optical_frame', 'package://get_obj_dist/human_model.STL')
 
-        # Initializing ROS Topics
+        self.moving_average = [[3] * size_of_moving_avg] * marker_size
+        self.set_marker_array(marker_size, 'camera_color_optical_frame', 'package://get_obj_dist/human_model.STL')
+
+        # Initiale publishers
         self.dist_pub = rospy.Publisher('/obj_to_dist/human_distance', Image, queue_size=10)
         self.render_pub = rospy.Publisher('/obj_to_dist/show_people_marker_array', MarkerArray, queue_size=10)
 
+        # Initialize subscribers
         self.bbx_sub = message_filters.Subscriber('/human_detected_image/bounding_box', box_list)
         self.human_image_sub = message_filters.Subscriber('/human_detected_image/image', Image)
-        self.depth_image_sub = message_filters.Subscriber('/camera/depth/image_rect_raw', Image)
+        self.depth_image_sub = message_filters.Subscriber('/camera/aligned_depth_to_color/image_raw', Image)
+        # self.depth_image_sub = message_filters.Subscriber('/camera/depth/image_rect_raw', Image)
 
         ts = message_filters.ApproximateTimeSynchronizer([self.bbx_sub, self.human_image_sub,
                                                           self.depth_image_sub],
@@ -43,6 +46,7 @@ class obj_dist:
         ts.registerCallback(self.callback)
 
     def callback(self, bbx, image, depth):
+        print('working lol')
         if bbx.length:
             cv_depth = self.bridge.imgmsg_to_cv2(depth, 'passthrough')
             cv_image = self.bridge.imgmsg_to_cv2(image, 'bgr8')
@@ -57,12 +61,13 @@ class obj_dist:
 
     def get_human_distance(self, cv_depth, cv_image, box, person_id):
         roi_depth = cv_depth[box.ymin:box.ymax, box.xmin:box.xmax]
-        filtered_depth, _size = filter_background(roi_depth)
+        # filtered_depth, _size = filter_background(roi_depth)
+        filtered_depth, _size = dynamic_background(roi_depth)
         if _size:
-            self.moving_average.pop()
-            self.moving_average.insert(0, filtered_depth.sum() / _size / 1000.0)
+            self.moving_average[person_id].pop()
+            self.moving_average[person_id].insert(0, filtered_depth.sum() / _size / 1000.0)
 
-            current_avg = sum(self.moving_average) / size_of_moving_avg
+            current_avg = sum(self.moving_average[person_id]) / size_of_moving_avg
 
             x_meter = get_x_in_meters(box.xmin, box.xmax, current_avg)
             cv2.putText(cv_image, '{} meters / Person {}'.format(round(current_avg, 2), person_id),
@@ -79,14 +84,13 @@ class obj_dist:
             return -1, -1, -1
 
     def set_marker_array(self, size, frame_id, package):
-        # self.marker_array.markers = [Marker()] * size
-        for i in range(0, size):
+        for counter in range(0, size):
             self.marker_array.markers.append(Marker())
-            self.marker_array.markers[i].header.frame_id = frame_id
-            self.marker_array.markers[i].lifetime = rospy.Duration()
-            self.marker_array.markers[i].id = i
-            self.marker_array.markers[i].type = Marker.MESH_RESOURCE
-            self.marker_array.markers[i].mesh_resource = package
+            self.marker_array.markers[counter].header.frame_id = frame_id
+            self.marker_array.markers[counter].lifetime = rospy.Duration()
+            self.marker_array.markers[counter].id = counter
+            self.marker_array.markers[counter].type = Marker.MESH_RESOURCE
+            self.marker_array.markers[counter].mesh_resource = package
 
     def set_model_coordinates(self, cood, person_id):
         self.marker_array.markers[person_id].header.stamp = rospy.Time.now()
@@ -124,5 +128,5 @@ def main(args):
 
 
 if __name__ == '__main__':
-    # rospy.set_param("use_sim_time", 'true')
+    rospy.set_param("use_sim_time", 'true')
     main(sys.argv)
