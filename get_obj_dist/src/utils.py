@@ -24,7 +24,7 @@ def dynamic_background(roi):
     # Anything less than 100mm is sure noise
     # roi = np.ma.masked_less(roi, 100)
     roi_1d = roi.flatten()
-    hist, bins = np.histogram(roi, bins=_bin, density=True)
+    hist, bins = np.histogram(roi_1d, bins=_bin, density=True)
     max_bin = hist.argmax() + 1
 
     # plt.hist(roi_1d, bins=_bin, density=True)

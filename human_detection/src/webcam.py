@@ -68,7 +68,7 @@ class human_detector:
         self.image_sub = rospy.Subscriber("/camera/color/image_raw", Image, self.callback)
 
         self.image_pub = rospy.Publisher("/human_detected_image/image", Image, queue_size=10)
-        self.bbx_pub = rospy.Publisher('/human_detected_image/bounding_box', box_list, queue_size=10)
+        self.bbx_pub = rospy.Publisher("/human_detected_image/bounding_box", box_list, queue_size=10)
 
     def callback(self, data):
         t0 = time.time()
@@ -126,7 +126,7 @@ class human_detector:
         counter = 0
         list_length = 0
         bbx_list = box_list()
-        bbx_list.header.stamp = rospy.Time.now()
+        bbx_list.header.stamp = data.header.stamp
 
         for score in scores[0]:
             if score > 0.6:
@@ -145,11 +145,10 @@ class human_detector:
 
         try:
             cvt_msg = self.bridge.cv2_to_imgmsg(cv_image, "bgr8")
-            cvt_msg.header.stamp = rospy.Time.now()
+            cvt_msg.header.stamp = data.header.stamp
             self.image_pub.publish(cvt_msg)
         except CvBridgeError as e:
             print(e)
- 
 
         # Append Accuracy
         # if scores[0][0] > 0.01:

@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-import numpy as np
 import sys
 import cv2
 import rospy
@@ -17,6 +16,7 @@ font = cv2.FONT_HERSHEY_SIMPLEX
 font_scale = 0.75
 font_color = (255, 255, 255)
 line_type = 2
+marker_size = 5
 size_of_moving_avg = 15
 
 
@@ -25,8 +25,9 @@ class obj_dist:
         # Declare functional variables
         self.bridge = CvBridge()
         self.marker_array = MarkerArray()
-        self.moving_average = [3] * size_of_moving_avg
-        self.set_marker_array(5, 'camera_color_optical_frame', 'package://get_obj_dist/human_model.STL')
+
+        self.moving_average = [[3] * size_of_moving_avg] * marker_size
+        self.set_marker_array(marker_size, 'camera_color_optical_frame', 'package://get_obj_dist/human_model.STL')
 
         # Initiale publishers
         self.dist_pub = rospy.Publisher('/obj_to_dist/human_distance', Image, queue_size=10)
@@ -35,8 +36,8 @@ class obj_dist:
         # Initialize subscribers
         self.bbx_sub = message_filters.Subscriber('/human_detected_image/bounding_box', box_list)
         self.human_image_sub = message_filters.Subscriber('/human_detected_image/image', Image)
-        # self.depth_image_sub = message_filters.Subscriber('/camera/aligned_depth_to_color/image_raw', Image)
-        self.depth_image_sub = message_filters.Subscriber('/camera/depth/image_rect_raw', Image)
+        self.depth_image_sub = message_filters.Subscriber('/camera/aligned_depth_to_color/image_raw', Image)
+        # self.depth_image_sub = message_filters.Subscriber('/camera/depth/image_rect_raw', Image)
 
         ts = message_filters.ApproximateTimeSynchronizer([self.bbx_sub, self.human_image_sub,
                                                           self.depth_image_sub],
@@ -45,6 +46,7 @@ class obj_dist:
         ts.registerCallback(self.callback)
 
     def callback(self, bbx, image, depth):
+        print('working lol')
         if bbx.length:
             cv_depth = self.bridge.imgmsg_to_cv2(depth, 'passthrough')
             cv_image = self.bridge.imgmsg_to_cv2(image, 'bgr8')
@@ -62,10 +64,10 @@ class obj_dist:
         # filtered_depth, _size = filter_background(roi_depth)
         filtered_depth, _size = dynamic_background(roi_depth)
         if _size:
-            self.moving_average.pop()
-            self.moving_average.insert(0, filtered_depth.sum() / _size / 1000.0)
+            self.moving_average[person_id].pop()
+            self.moving_average[person_id].insert(0, filtered_depth.sum() / _size / 1000.0)
 
-            current_avg = sum(self.moving_average) / size_of_moving_avg
+            current_avg = sum(self.moving_average[person_id]) / size_of_moving_avg
 
             x_meter = get_x_in_meters(box.xmin, box.xmax, current_avg)
             cv2.putText(cv_image, '{} meters / Person {}'.format(round(current_avg, 2), person_id),
@@ -126,5 +128,5 @@ def main(args):
 
 
 if __name__ == '__main__':
-    # rospy.set_param("use_sim_time", 'true')
+    rospy.set_param("use_sim_time", 'true')
     main(sys.argv)
