@@ -1,4 +1,11 @@
 <launch>
+    <arg name="debug" default="True"/>
+    <arg name="bag" default="/November\ 1/01.bag"/>
+    <arg name="path" default="/home/jerry/Documents/workspaces/human_detection/src/ROS_human_detection/rosbag"/>
+
+    <group if="$(arg debug)">
+        <node pkg="rosbag" type="play" args="-l -q $(arg path)$(arg bag)" output="screen" name="rosbag_playback"/>
+    </group>
+
     <node pkg="human_detection" type="webcam.py" name="webcam"/>
-    <node pkg="get_obj_dist" type="object_to_distance.py" name="object_to_distance"/>
 </launch>

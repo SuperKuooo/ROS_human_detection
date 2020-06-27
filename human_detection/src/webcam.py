@@ -114,7 +114,7 @@ class human_detector:
             if len(run_time_list) > 10:
                 del run_time_list[0]
 
-        if len(run_time_list) > 0:
+        if len(run_time_list):
             avg_run_time = round(sum(run_time_list) / len(run_time_list) * 1000, 1)
             cv2.putText(cv_image, 'Run Time: {}ms'.format(avg_run_time),
                         text_position,
