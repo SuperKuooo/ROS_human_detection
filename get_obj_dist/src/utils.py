@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 
 _noise_limit = 100
 _diff = 1000
@@ -36,6 +35,7 @@ def dynamic_background(roi):
 def get_x_in_meters(xmin, xmax, z_i):
     # Tune z_c to get better value lol.
     # 500 is literally randomly chosen lol
+    # z_i is the distance of the object
     z_c = 500
     ret_val = (z_i * (xmax + xmin - 600.0)) / (2 * z_c)
     return ret_val
